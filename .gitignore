@@ -1,0 +1,28 @@
+# Local Git metadata backups created during repository consolidation
+.git-metadata-backup/
+
+# Local data should not be uploaded
+Dyn-HaMR/_DATA/
+Dyn-HaMR/*_DATA/
+MA-HaMR/_DATA/
+MA-HaMR/*_DATA/
+
+# Root-level notes/assets outside the two code directories
+/Dyn-HaMR.pdf
+/Instruction.md
+
+# Python cache and environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.env
+.venv/
+env/
+venv/
+
+# Editor and OS files
+.vscode/
+.idea/
+*.swp
+.DS_Store

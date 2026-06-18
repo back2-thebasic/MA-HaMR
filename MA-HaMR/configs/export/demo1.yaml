@@ -1,0 +1,17 @@
+# Step 1 mini: export pseudo labels from existing Dyn-HaMR run (demo1)
+
+seq_name: demo1
+expert_stride: 10
+expert_stage: smooth_fit
+expert_iter: 50          # null = latest in smooth_fit/
+fps: 30.0
+camera_source: vipe
+
+# Dyn-HaMR hydra log directory (teacher output — read-only)
+dynhamr_log_dir: /extra/SuC/experiments/outputs/logs/video-custom/2026-06-11/demo1-all-shot-0-0--1
+
+# MA-HaMR processed output (student data)
+output_dir: /extra/SuC/data/mahmr/processed/demo1
+
+# append one line to global registry after export
+manifest_path: /extra/SuC/data/mahmr/manifests/sequences.jsonl

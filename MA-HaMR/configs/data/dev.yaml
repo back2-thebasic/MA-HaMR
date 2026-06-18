@@ -1,0 +1,22 @@
+# Step 2 development data config.
+
+processed_root: /extra/SuC/data/mahmr/processed
+features_root: /extra/SuC/data/mahmr/features
+img_feat_dim: 512
+all: true
+overwrite: false
+sequence_names:
+  - h2o_s1_h1
+  - h2o_s1_h2
+  - h2o_s2_h1
+
+dataset:
+  processed_root: /extra/SuC/data/mahmr/processed
+  features_root: /extra/SuC/data/mahmr/features
+  manifest_path: /extra/SuC/data/mahmr/manifests/sequences.jsonl
+  sequence_names:
+    - h2o_s1_h1
+    - h2o_s1_h2
+    - h2o_s2_h1
+  window_size: 256
+  stride: 128

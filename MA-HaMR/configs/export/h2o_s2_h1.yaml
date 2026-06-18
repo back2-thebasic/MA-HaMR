@@ -1,0 +1,10 @@
+seq_name: h2o_s2_h1
+expert_stride: 10
+expert_stage: smooth_fit
+expert_iter: 300
+fps: 25.0
+camera_source: vipe
+
+dynhamr_log_dir: /extra/SuC/experiments/outputs/logs/video-custom/2026-06-17/h2o_s2_h1-all-shot-0-0--1
+output_dir: /extra/SuC/data/mahmr/processed/h2o_s2_h1
+manifest_path: /extra/SuC/data/mahmr/manifests/sequences.jsonl
