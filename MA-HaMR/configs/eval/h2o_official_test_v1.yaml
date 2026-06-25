@@ -1,0 +1,48 @@
+# Official H2O test split for held-out MA-HaMR evaluation.
+
+seed: 0
+device: cuda:0
+
+dataset:
+  processed_root: /extra/SuC/data/mahmr/processed
+  features_root: /extra/SuC/data/mahmr/features
+  manifest_path: /extra/SuC/data/mahmr/manifests/sequences.jsonl
+  sequence_names:
+    - h2o_s4_h1
+    - h2o_s4_h2
+    - h2o_s4_k1
+    - h2o_s4_k2
+    - h2o_s4_o1
+    - h2o_s4_o2
+  window_size: null
+  stride: null
+
+model:
+  num_hands: 2
+  img_feat_dim: 512
+  d_mem: 128
+  d_val: 123
+  hidden_dim: 256
+  num_blocks: 4
+  topk: 8
+  exclude_recent: 5
+  max_memory_size: 1024
+  dropout: 0.0
+
+geometry:
+  use_mano: true
+  mano_model_path: /data/SuC/Dyn-HaMR/_DATA/data/mano
+  flat_hand_mean: false
+
+loss_weights:
+  distill: 1.0
+  proj: 0.5
+  bone: 0.1
+  consistency: 0.05
+  scale: 0.2
+  scale_distill: 0.5
+  scale_anchor: 1.0
+  prior: 0.04
+
+train:
+  output_dir: /extra/SuC/experiments/mahmr/h2o_official_test_v1

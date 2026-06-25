@@ -1,0 +1,80 @@
+# Official H2O train split, using the v3 fit-quality MA-HaMR recipe.
+# This split follows the H2O pose protocol:
+#   subject1: h1 h2 k1 k2 o1 o2
+#   subject2: h1 h2 k1 k2 o1 o2
+#   subject3: h1 h2 k1
+#
+# Validation/test are kept held-out and must be evaluated with
+# scripts/evaluate_refined.py --memory-mode none.
+
+seed: 0
+device: cuda:0
+
+dataset:
+  processed_root: /extra/SuC/data/mahmr/processed
+  features_root: /extra/SuC/data/mahmr/features
+  manifest_path: /extra/SuC/data/mahmr/manifests/sequences.jsonl
+  sequence_names:
+    - h2o_s1_h1
+    - h2o_s1_h2
+    - h2o_s1_k1
+    - h2o_s1_k2
+    - h2o_s1_o1
+    - h2o_s1_o2
+    - h2o_s2_h1
+    - h2o_s2_h2
+    - h2o_s2_k1
+    - h2o_s2_k2
+    - h2o_s2_o1
+    - h2o_s2_o2
+    - h2o_s3_h1
+    - h2o_s3_h2
+    - h2o_s3_k1
+  window_size: 256
+  stride: 128
+
+model:
+  num_hands: 2
+  img_feat_dim: 512
+  d_mem: 128
+  d_val: 123
+  hidden_dim: 256
+  num_blocks: 4
+  topk: 8
+  exclude_recent: 5
+  max_memory_size: 1024
+  dropout: 0.0
+
+geometry:
+  use_mano: true
+  mano_model_path: /data/SuC/Dyn-HaMR/_DATA/data/mano
+  flat_hand_mean: false
+
+loss_weights:
+  distill: 1.0
+  proj: 0.5
+  bone: 0.1
+  consistency: 0.05
+  scale: 0.2
+  scale_distill: 0.5
+  scale_anchor: 1.0
+  prior: 0.04
+
+train:
+  epochs: 1200
+  max_steps: 18000
+  batch_size: 1
+  shuffle: true
+  num_workers: 0
+  lr: 0.00015
+  lr_min: 0.000005
+  lr_schedule: cosine
+  weight_decay: 0.0001
+  grad_clip: 1.0
+  # Warm-start from the dev v3 checkpoint. This checkpoint used only official
+  # train sequences (subset: s1_h1, s1_h2, s2_h1), so it does not leak val/test.
+  resume_from: /extra/SuC/experiments/mahmr/h2o_gpu3_fit_v3_ft6000/last.pt
+  resume_optimizer: false
+  log_every: 10
+  plot_every: 100
+  output_dir: /extra/SuC/experiments/mahmr/h2o_official_train_v1

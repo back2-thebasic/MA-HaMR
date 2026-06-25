@@ -1,10 +1,10 @@
 seq_name: h2o_s1_h1
-expert_stride: 10
+expert_stride: 3
 expert_stage: smooth_fit
 expert_iter: 300
 fps: 25.0
 camera_source: vipe
 
 dynhamr_log_dir: /extra/SuC/experiments/outputs/h2o/h2o_s1_h1-all-shot-0-0--1
-output_dir: /extra/SuC/data/mahmr/processed/h2o_s1_h1
-manifest_path: /extra/SuC/data/mahmr/manifests/sequences.jsonl
+output_dir: /extra/SuC/data/mahmr/processed_h2o_dense_v1/h2o_s1_h1
+manifest_path: /extra/SuC/data/mahmr/manifests/sequences_h2o_train_dense_v1.jsonl

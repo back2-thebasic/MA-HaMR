@@ -205,7 +205,6 @@ class MAHaMRRefiner(nn.Module):
             num_hands=self.cfg.num_hands,
             scale_eps=self.cfg.scale_eps,
         )
-        out["packed_residual"] = packed
         out["memory_context"] = memory_context
         out["memory_size"] = self.memory.size
         if return_attention:
@@ -246,6 +245,23 @@ def _build_observation(tensors: Dict[str, torch.Tensor]) -> torch.Tensor:
     return torch.cat([mano, kp, img, uncertainty, cam_t, scale], dim=-1)
 
 
+# Per-component soft bounds (in MANO/world units) on the predicted residual.
+# A tanh saturation keeps in-distribution corrections near-linear while
+# preventing catastrophic out-of-distribution frames from producing huge
+# pose / translation / scale jumps that blow up the reprojection.
+_RESIDUAL_BOUNDS = {
+    "root": (0, 3, 1.5),
+    "pose": (3, 48, 1.5),
+    "betas": (48, 58, 3.0),
+    "trans": (58, 61, 2.5),
+}
+_SCALE_DELTA_BOUND = 6.0
+
+
+def _soft_bound(x: torch.Tensor, bound: float) -> torch.Tensor:
+    return bound * torch.tanh(x / bound)
+
+
 def _unpack_refinement(
     packed: torch.Tensor,
     mano_init: torch.Tensor,
@@ -253,6 +269,7 @@ def _unpack_refinement(
     *,
     num_hands: int,
     scale_eps: float,
+    bound_residuals: bool = True,
 ) -> Dict[str, torch.Tensor]:
     batch_size, seq_len, dim = packed.shape
     expected = num_hands * MANO_LOCAL_DIM + 1
@@ -262,10 +279,30 @@ def _unpack_refinement(
     hand = packed[..., : num_hands * MANO_LOCAL_DIM].view(batch_size, seq_len, num_hands, MANO_LOCAL_DIM)
     hand = hand.permute(0, 2, 1, 3).contiguous()
     delta_world_scale = packed[..., -1:].contiguous()
+    if bound_residuals:
+        bounded = torch.empty_like(hand)
+        for _name, (a, b, bnd) in _RESIDUAL_BOUNDS.items():
+            bounded[..., a:b] = _soft_bound(hand[..., a:b], bnd)
+        hand = bounded
+        delta_world_scale = _soft_bound(delta_world_scale, _SCALE_DELTA_BOUND)
     mano_refined = mano_init + hand
-    scale_logits = world_scale_init + delta_world_scale
-    world_scale_refined = F.softplus(scale_logits) + scale_eps
+    # Anchor scale so a zero residual reproduces |init scale| exactly. The naive
+    # softplus(init + delta) introduces a fixed offset (softplus(1.0)=1.31 for the
+    # default init scale of 1.0), which itself manifests as scale drift away from
+    # the initialization. We instead place the softplus base at softplus^-1(|init|)
+    # so that delta=0 -> scale=|init|, while keeping the output strictly positive.
+    scale_ref = world_scale_init.abs().clamp_min(scale_eps)
+    scale_base = torch.log(torch.expm1(scale_ref.clamp_min(1e-4)))
+    world_scale_refined = F.softplus(scale_base + delta_world_scale) + scale_eps
+    packed_bounded = torch.cat(
+        [
+            hand.permute(0, 2, 1, 3).reshape(batch_size, seq_len, num_hands * MANO_LOCAL_DIM),
+            delta_world_scale,
+        ],
+        dim=-1,
+    )
     return {
+        "packed_residual": packed_bounded,
         "delta_mano_local": hand,
         "delta_root_orient": hand[..., :3],
         "delta_pose_body": hand[..., 3:48].reshape(batch_size, num_hands, seq_len, 15, 3),

@@ -1,0 +1,58 @@
+# 3000-step H2O dev stability run with real MANO joints.
+# Uses the post-fix geometry/scale/projection loss settings:
+#   - normalized L_proj with weight 0.2
+#   - anchored positive world_scale refinement
+#   - scale temporal + median-anchor regularization
+
+seed: 0
+device: cuda:3
+
+dataset:
+  processed_root: /extra/SuC/data/mahmr/processed
+  features_root: /extra/SuC/data/mahmr/features
+  manifest_path: /extra/SuC/data/mahmr/manifests/sequences.jsonl
+  sequence_names:
+    - h2o_s1_h1
+    - h2o_s1_h2
+    - h2o_s2_h1
+  window_size: 256
+  stride: 128
+
+model:
+  num_hands: 2
+  img_feat_dim: 512
+  d_mem: 128
+  d_val: 123
+  hidden_dim: 128
+  num_blocks: 2
+  topk: 4
+  exclude_recent: 5
+  max_memory_size: 1024
+  dropout: 0.0
+
+geometry:
+  use_mano: true
+  mano_model_path: /data/SuC/Dyn-HaMR/_DATA/data/mano
+  flat_hand_mean: false
+
+loss_weights:
+  distill: 1.0
+  proj: 0.2
+  bone: 0.1
+  consistency: 0.05
+  scale: 0.2
+  scale_distill: 0.2
+  scale_anchor: 1.0
+
+train:
+  epochs: 600
+  max_steps: 3000
+  batch_size: 1
+  shuffle: true
+  num_workers: 0
+  lr: 0.0001
+  weight_decay: 0.0001
+  grad_clip: 1.0
+  log_every: 1
+  plot_every: 20
+  output_dir: /extra/SuC/experiments/mahmr/h2o_gpu3_mano_geometry_3000

@@ -1,0 +1,88 @@
+# Official H2O train split -- v6 stage A: dense pseudo-label supervision only.
+#
+# Purpose:
+#   Return to the original MA-HaMR/amortized route by improving supervision
+#   density instead of adding test-time optimization. This run keeps the current
+#   refiner architecture and v5 visual loss, but replaces sparse stride=10
+#   expert labels with stride=3 dense pseudo labels for all 15 official train
+#   sequences.
+#
+# Dense labels:
+#   processed_root: /extra/SuC/data/mahmr/processed_h2o_dense_v1
+#   manifest:       /extra/SuC/data/mahmr/manifests/sequences_h2o_train_dense_v1.jsonl
+#
+# Expected effect:
+#   The network should see ~3.3x more supervised expert frames, especially the
+#   rare large-scale h2o_s2_h1 case that matches the h2o_s4_h1 failure mode.
+
+seed: 0
+device: cuda:0
+
+dataset:
+  processed_root: /extra/SuC/data/mahmr/processed_h2o_dense_v1
+  features_root: /extra/SuC/data/mahmr/features
+  manifest_path: /extra/SuC/data/mahmr/manifests/sequences_h2o_train_dense_v1.jsonl
+  sequence_names:
+    - h2o_s1_h1
+    - h2o_s1_h2
+    - h2o_s1_k1
+    - h2o_s1_k2
+    - h2o_s1_o1
+    - h2o_s1_o2
+    - h2o_s2_h1
+    - h2o_s2_h2
+    - h2o_s2_k1
+    - h2o_s2_k2
+    - h2o_s2_o1
+    - h2o_s2_o2
+    - h2o_s3_h1
+    - h2o_s3_h2
+    - h2o_s3_k1
+  window_size: 256
+  stride: 128
+
+model:
+  num_hands: 2
+  img_feat_dim: 512
+  d_mem: 128
+  d_val: 123
+  hidden_dim: 256
+  num_blocks: 4
+  topk: 8
+  exclude_recent: 5
+  max_memory_size: 1024
+  dropout: 0.1
+
+geometry:
+  use_mano: true
+  mano_model_path: /data/SuC/Dyn-HaMR/_DATA/data/mano
+  flat_hand_mean: false
+
+loss_weights:
+  distill: 1.2
+  proj: 0.5
+  proj_huber: 0.8
+  proj_huber_delta: 50.0
+  bone: 0.1
+  consistency: 0.05
+  scale: 0.2
+  scale_distill: 0.9
+  scale_anchor: 1.0
+  prior: 0.03
+
+train:
+  epochs: 1200
+  max_steps: 12000
+  batch_size: 1
+  shuffle: true
+  num_workers: 0
+  lr: 0.00005
+  lr_min: 0.000003
+  lr_schedule: cosine
+  weight_decay: 0.0002
+  grad_clip: 1.0
+  resume_from: /extra/SuC/experiments/mahmr/h2o_official_train_v5_visual/last.pt
+  resume_optimizer: false
+  log_every: 10
+  plot_every: 100
+  output_dir: /extra/SuC/experiments/mahmr/h2o_official_train_v6_dense_only

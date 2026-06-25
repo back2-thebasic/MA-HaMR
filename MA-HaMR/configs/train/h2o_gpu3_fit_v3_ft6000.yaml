@@ -1,0 +1,63 @@
+# Fit-quality run v3: fine-tune v2 toward expert-level reprojection.
+#   - resumes the v2 6000-step checkpoint
+#   - pose_body / root distill weights raised (code) to close the pose gap
+#   - stronger projection + scale distillation
+#   - cosine LR decay for clean convergence
+
+seed: 0
+device: cuda:3
+
+dataset:
+  processed_root: /extra/SuC/data/mahmr/processed
+  features_root: /extra/SuC/data/mahmr/features
+  manifest_path: /extra/SuC/data/mahmr/manifests/sequences.jsonl
+  sequence_names:
+    - h2o_s1_h1
+    - h2o_s1_h2
+    - h2o_s2_h1
+  window_size: 256
+  stride: 128
+
+model:
+  num_hands: 2
+  img_feat_dim: 512
+  d_mem: 128
+  d_val: 123
+  hidden_dim: 256
+  num_blocks: 4
+  topk: 8
+  exclude_recent: 5
+  max_memory_size: 1024
+  dropout: 0.0
+
+geometry:
+  use_mano: true
+  mano_model_path: /data/SuC/Dyn-HaMR/_DATA/data/mano
+  flat_hand_mean: false
+
+loss_weights:
+  distill: 1.0
+  proj: 0.5
+  bone: 0.1
+  consistency: 0.05
+  scale: 0.2
+  scale_distill: 0.5
+  scale_anchor: 1.0
+  prior: 0.04
+
+train:
+  epochs: 1200
+  max_steps: 6000
+  batch_size: 1
+  shuffle: true
+  num_workers: 0
+  lr: 0.0001
+  lr_min: 0.000005
+  lr_schedule: cosine
+  weight_decay: 0.0001
+  grad_clip: 1.0
+  resume_from: /extra/SuC/experiments/mahmr/h2o_gpu3_fit_v2_6000/last.pt
+  resume_optimizer: false
+  log_every: 10
+  plot_every: 50
+  output_dir: /extra/SuC/experiments/mahmr/h2o_gpu3_fit_v3_ft6000
